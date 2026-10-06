@@ -1,0 +1,84 @@
+{
+  "expo": {
+    "name": "توريد سائق",
+    "slug": "tawreed-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "tawreed-driver",
+    "userInterfaceStyle": "light",
+    "primaryColor": "#0B2D5B",
+    "ios": {
+      "bundleIdentifier": "sa.tawreed.driver",
+      "supportsTablet": false,
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "ar",
+        "NSCameraUsageDescription": "لتصوير الشحنة عند الاستلام والتسليم.",
+        "NSPhotoLibraryUsageDescription": "لإرفاق صور إثبات التسليم.",
+        "NSLocationWhenInUseUsageDescription": "لمشاركة موقعك مع العميل أثناء التوصيل.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "لمشاركة موقعك أثناء رحلات التوصيل حتى في الخلفية.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "android": {
+      "package": "sa.tawreed.driver",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/adaptive-foreground.png"
+      },
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-localization",
+        {
+          "supportsRTL": true
+        }
+      ],
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/splash.png",
+          "imageWidth": 160
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "لمشاركة موقعك مع العميل أثناء التوصيل."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "لتصوير الشحنة عند الاستلام والتسليم."
+        }
+      ]
+    ],
+    "extra": {
+      "appClient": "DRIVER_APP",
+      "supportsRTL": true,
+      "router": {},
+      "eas": {
+        "projectId": "0e648f8e-a879-40cf-a0bb-5d29b5f33abf"
+      }
+    },
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "owner": "ahmedgamalmansour11sa"
+  }
+}

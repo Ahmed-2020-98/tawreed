@@ -1,0 +1,27 @@
+{
+  "name": "@tawreed/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tawreed brand tokens (colors, type, radii, shadows) for web (CSS variables) and React Native",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./theme.css",
+    "./assets/*": "./assets/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "build:brand": "node scripts/build-brand.mjs"
+  },
+  "devDependencies": {
+    "@expo-google-fonts/cairo": "^0.4.2",
+    "@expo-google-fonts/montserrat": "^0.4.2",
+    "@tawreed/eslint-config": "workspace:*",
+    "@tawreed/tsconfig": "workspace:*",
+    "eslint": "^9.39.1",
+    "harfbuzzjs": "^1.6.2",
+    "sharp": "^0.35.5",
+    "typescript": "6.0.3"
+  }
+}

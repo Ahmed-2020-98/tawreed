@@ -1,0 +1,13 @@
+// Tawreed — Prisma schema (one file per bounded context).
+// Conventions: UUIDv7 ids, table names snake_case (@@map), money Decimal(14,2), qty Decimal(14,3).
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}

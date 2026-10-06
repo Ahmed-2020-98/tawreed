@@ -1,0 +1,222 @@
+enum BannerPlacement {
+  HOME_HERO
+  HOME_STRIP
+  STORE_HERO
+  CATEGORY_TOP
+  APP_HOME
+}
+
+enum LinkType {
+  NONE
+  CATEGORY
+  PRODUCT
+  BRAND
+  SUPPLIER
+  DEALS
+  RFQ
+  URL
+}
+
+enum HomeSectionType {
+  CATEGORIES
+  DEALS
+  PRODUCTS
+  BRANDS
+  SUPPLIERS
+  BUY_AGAIN
+  BANNER_STRIP
+}
+
+enum PlatformScope {
+  ALL
+  WEB
+  APP
+}
+
+enum FaqAudience {
+  ALL
+  BUYER
+  SUPPLIER
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum LeadType {
+  BUYER
+  SUPPLIER
+  PARTNERSHIP
+  SUPPORT
+  OTHER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CLOSED
+}
+
+model Banner {
+  id                String          @id @default(uuid(7)) @db.Uuid
+  placement         BannerPlacement
+  titleAr           String
+  titleEn           String
+  subtitleAr        String?
+  subtitleEn        String?
+  ctaLabelAr        String?
+  ctaLabelEn        String?
+  imageFileId       String          @db.Uuid
+  mobileImageFileId String?         @db.Uuid
+  linkType          LinkType        @default(NONE)
+  linkValue         String?
+  audience          BusinessType[]
+  startsAt          DateTime?       @db.Timestamptz(3)
+  endsAt            DateTime?       @db.Timestamptz(3)
+  sortOrder         Int             @default(0)
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime        @updatedAt @db.Timestamptz(3)
+
+  image       StoredFile  @relation("BannerImage", fields: [imageFileId], references: [id])
+  mobileImage StoredFile? @relation("BannerMobileImage", fields: [mobileImageFileId], references: [id])
+
+  @@index([placement, isActive])
+  @@map("banners")
+}
+
+model HomeSection {
+  id        String          @id @default(uuid(7)) @db.Uuid
+  type      HomeSectionType
+  titleAr   String
+  titleEn   String
+  config    Json            @default("{}")
+  platform  PlatformScope   @default(ALL)
+  sortOrder Int             @default(0)
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@map("home_sections")
+}
+
+model CmsPage {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  slug           String   @unique
+  titleAr        String
+  titleEn        String
+  bodyAr         String
+  bodyEn         String
+  seoTitle       String?
+  seoDescription String?
+  isPublished    Boolean  @default(true)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("cms_pages")
+}
+
+model Faq {
+  id         String      @id @default(uuid(7)) @db.Uuid
+  audience   FaqAudience @default(ALL)
+  category   String?
+  questionAr String
+  questionEn String
+  answerAr   String
+  answerEn   String
+  sortOrder  Int         @default(0)
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime    @updatedAt @db.Timestamptz(3)
+
+  @@map("faqs")
+}
+
+model BlogPost {
+  id             String        @id @default(uuid(7)) @db.Uuid
+  slug           String        @unique
+  titleAr        String
+  titleEn        String
+  excerptAr      String
+  excerptEn      String
+  bodyAr         String
+  bodyEn         String
+  coverFileId    String?       @db.Uuid
+  tags           String[]
+  authorName     String
+  status         PublishStatus @default(DRAFT)
+  publishedAt    DateTime?     @db.Timestamptz(3)
+  readingMinutes Int           @default(4)
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @db.Timestamptz(3)
+
+  cover StoredFile? @relation("BlogCover", fields: [coverFileId], references: [id])
+
+  @@index([status, publishedAt])
+  @@map("blog_posts")
+}
+
+model Testimonial {
+  id           String        @id @default(uuid(7)) @db.Uuid
+  nameAr       String
+  nameEn       String
+  roleAr       String
+  roleEn       String
+  companyAr    String
+  companyEn    String
+  businessType BusinessType?
+  quoteAr      String
+  quoteEn      String
+  avatarFileId String?       @db.Uuid
+  rating       Int           @default(5)
+  sortOrder    Int           @default(0)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@map("testimonials")
+}
+
+model LandingStat {
+  id        String  @id @default(uuid(7)) @db.Uuid
+  key       String  @unique
+  labelAr   String
+  labelEn   String
+  value     Int
+  suffix    String?
+  sortOrder Int     @default(0)
+
+  @@map("landing_stats")
+}
+
+model Lead {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  type         LeadType
+  name         String
+  companyName  String?
+  phone        String
+  email        String?
+  cityId       String?    @db.Uuid
+  message      String?
+  source       String     @default("web")
+  status       LeadStatus @default(NEW)
+  assignedToId String?    @db.Uuid
+  notes        String?
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+
+  city City? @relation(fields: [cityId], references: [id])
+
+  @@index([status, createdAt])
+  @@map("leads")
+}
+
+model PlatformSetting {
+  key         String   @id
+  value       Json
+  updatedById String?  @db.Uuid
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("platform_settings")
+}

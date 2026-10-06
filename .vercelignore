@@ -1,0 +1,22 @@
+# Uploaded to Vercel from the repo root (projects use rootDirectory apps/api and apps/web).
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/.expo
+apps/*/ios
+apps/*/android
+apps/api/storage
+apps/api/storage-test
+apps/api/storage-deploy
+apps/api/chromium-bin
+apps/api/prisma/seed/media/.candidates
+apps/web/test-results
+apps/web/playwright-report
+docs
+.env
+.env.*
+**/.env
+**/.env.local
+.agents

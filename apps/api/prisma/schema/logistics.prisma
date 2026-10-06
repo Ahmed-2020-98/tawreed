@@ -1,0 +1,237 @@
+enum FleetOwner {
+  PLATFORM
+  SUPPLIER
+}
+
+enum DriverStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum VehicleType {
+  VAN
+  PICKUP
+  TRUCK_3T
+  TRUCK_7T
+  TRUCK_12T
+  TRAILER
+}
+
+enum DispatchMode {
+  SUPPLIER_FLEET
+  PLATFORM_FLEET
+}
+
+enum ShipmentStatus {
+  PENDING_ASSIGNMENT
+  ASSIGNED
+  ACCEPTED
+  PICKED_UP
+  IN_TRANSIT
+  ARRIVED
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+enum CashStatus {
+  COLLECTED
+  HANDED_OVER
+  RECONCILED
+}
+
+model Driver {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  userId          String       @unique @db.Uuid
+  ownerType       FleetOwner
+  supplierId      String?      @db.Uuid
+  nationalId      String?
+  licenseNumber   String?
+  licenseExpiry   DateTime?    @db.Date
+  vehicleId       String?      @db.Uuid
+  status          DriverStatus @default(ACTIVE)
+  isOnline        Boolean      @default(false)
+  lastLat         Float?
+  lastLng         Float?
+  lastSeenAt      DateTime?    @db.Timestamptz(3)
+  ratingAvg       Decimal      @default(0) @db.Decimal(3, 2)
+  deliveriesCount Int          @default(0)
+  cashBalance     Decimal      @default(0) @db.Decimal(14, 2)
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  supplier    Supplier?        @relation(fields: [supplierId], references: [id])
+  vehicle     Vehicle?         @relation(fields: [vehicleId], references: [id])
+  shipments   Shipment[]
+  locations   ShipmentLocation[]
+  collections CashCollection[]
+
+  @@index([ownerType, supplierId])
+  @@map("drivers")
+}
+
+model Vehicle {
+  id           String      @id @default(uuid(7)) @db.Uuid
+  ownerType    FleetOwner
+  supplierId   String?     @db.Uuid
+  plateNumber  String      @unique
+  type         VehicleType
+  capacityKg   Int
+  refrigerated Boolean     @default(false)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime    @updatedAt @db.Timestamptz(3)
+
+  supplier  Supplier?  @relation(fields: [supplierId], references: [id])
+  drivers   Driver[]
+  shipments Shipment[]
+
+  @@map("vehicles")
+}
+
+model Shipment {
+  id                  String          @id @default(uuid(7)) @db.Uuid
+  number              String          @unique
+  supplierOrderId     String          @db.Uuid
+  orderId             String          @db.Uuid
+  supplierId          String          @db.Uuid
+  driverId            String?         @db.Uuid
+  vehicleId           String?         @db.Uuid
+  dispatchMode        DispatchMode    @default(SUPPLIER_FLEET)
+  status              ShipmentStatus  @default(PENDING_ASSIGNMENT)
+  pickupWarehouseId   String?         @db.Uuid
+  pickupSnapshot      Json
+  dropoffSnapshot     Json
+  scheduledDate       DateTime?       @db.Date
+  window              DeliveryWindow?
+  etaAt               DateTime?       @db.Timestamptz(3)
+  distanceKm          Decimal?        @db.Decimal(10, 2)
+  codAmount           Decimal         @default(0) @db.Decimal(14, 2)
+  codCollected        Decimal         @default(0) @db.Decimal(14, 2)
+  deliveryOtpHash     String?
+  deliveryOtpSentAt   DateTime?       @db.Timestamptz(3)
+  deliveryOtpAttempts Int             @default(0)
+  assignedAt          DateTime?       @db.Timestamptz(3)
+  acceptedAt          DateTime?       @db.Timestamptz(3)
+  pickedUpAt          DateTime?       @db.Timestamptz(3)
+  inTransitAt         DateTime?       @db.Timestamptz(3)
+  arrivedAt           DateTime?       @db.Timestamptz(3)
+  deliveredAt         DateTime?       @db.Timestamptz(3)
+  failedAt            DateTime?       @db.Timestamptz(3)
+  cancelledAt         DateTime?       @db.Timestamptz(3)
+  failureReason       String?
+  failureNote         String?
+  createdAt           DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime        @updatedAt @db.Timestamptz(3)
+
+  supplierOrder   SupplierOrder      @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  order           Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  supplier        Supplier           @relation(fields: [supplierId], references: [id])
+  driver          Driver?            @relation(fields: [driverId], references: [id])
+  vehicle         Vehicle?           @relation(fields: [vehicleId], references: [id])
+  pickupWarehouse SupplierWarehouse? @relation(fields: [pickupWarehouseId], references: [id])
+  items           ShipmentItem[]
+  events          ShipmentEvent[]
+  locations       ShipmentLocation[]
+  pod             ProofOfDelivery?
+  cashCollection  CashCollection?
+  documents       Document[]
+
+  @@index([driverId, status])
+  @@index([supplierOrderId])
+  @@index([status, dispatchMode])
+  @@map("shipments")
+}
+
+model ShipmentItem {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  shipmentId   String   @db.Uuid
+  orderItemId  String   @db.Uuid
+  qty          Decimal  @db.Decimal(14, 3)
+  deliveredQty Decimal? @db.Decimal(14, 3)
+
+  shipment  Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+
+  @@unique([shipmentId, orderItemId])
+  @@map("shipment_items")
+}
+
+model ShipmentEvent {
+  id         String         @id @default(uuid(7)) @db.Uuid
+  shipmentId String         @db.Uuid
+  status     ShipmentStatus
+  note       String?
+  lat        Float?
+  lng        Float?
+  actorType  ActorType
+  actorId    String?        @db.Uuid
+  createdAt  DateTime       @default(now()) @db.Timestamptz(3)
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId, createdAt])
+  @@map("shipment_events")
+}
+
+model ShipmentLocation {
+  id         BigInt   @id @default(autoincrement())
+  shipmentId String?  @db.Uuid
+  driverId   String   @db.Uuid
+  lat        Float
+  lng        Float
+  speed      Float?
+  heading    Float?
+  accuracy   Float?
+  recordedAt DateTime @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  shipment Shipment? @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  driver   Driver    @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId, recordedAt])
+  @@index([driverId, recordedAt])
+  @@map("shipment_locations")
+}
+
+model ProofOfDelivery {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  shipmentId      String   @unique @db.Uuid
+  receiverName    String
+  receiverPhone   String?
+  otpVerified     Boolean  @default(false)
+  signatureFileId String?  @db.Uuid
+  photoFileIds    String[]
+  lat             Float?
+  lng             Float?
+  notes           String?
+  deliveredAt     DateTime @db.Timestamptz(3)
+  createdById     String   @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@map("proofs_of_delivery")
+}
+
+model CashCollection {
+  id              String     @id @default(uuid(7)) @db.Uuid
+  shipmentId      String     @unique @db.Uuid
+  driverId        String     @db.Uuid
+  supplierOrderId String     @db.Uuid
+  amount          Decimal    @db.Decimal(14, 2)
+  status          CashStatus @default(COLLECTED)
+  collectedAt     DateTime   @db.Timestamptz(3)
+  handedOverAt    DateTime?  @db.Timestamptz(3)
+  reconciledById  String?    @db.Uuid
+  reconciledAt    DateTime?  @db.Timestamptz(3)
+  createdAt       DateTime   @default(now()) @db.Timestamptz(3)
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  driver   Driver   @relation(fields: [driverId], references: [id])
+
+  @@index([driverId, status])
+  @@map("cash_collections")
+}

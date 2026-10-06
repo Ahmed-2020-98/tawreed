@@ -1,0 +1,175 @@
+enum FileVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum FilePurpose {
+  PRODUCT_IMAGE
+  CATEGORY_IMAGE
+  BRAND_LOGO
+  SUPPLIER_LOGO
+  BANNER
+  AVATAR
+  BLOG_COVER
+  KYB_DOCUMENT
+  PAYMENT_PROOF
+  POD_PHOTO
+  POD_SIGNATURE
+  PICKUP_PHOTO
+  DISPUTE_PHOTO
+  ATTACHMENT
+  GENERATED_PDF
+  OTHER
+}
+
+enum FileStatus {
+  PENDING
+  READY
+  DELETED
+}
+
+enum DocumentType {
+  PURCHASE_ORDER
+  TAX_INVOICE
+  DELIVERY_NOTE
+  QUOTATION
+  CREDIT_NOTE
+  STATEMENT
+  SETTLEMENT
+  RECEIPT
+  POD
+  OTHER
+}
+
+enum OutboxStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+}
+
+model StoredFile {
+  id           String         @id @default(uuid(7)) @db.Uuid
+  visibility   FileVisibility
+  key          String         @unique
+  originalName String?
+  mimeType     String
+  sizeBytes    Int
+  sha256       String?
+  width        Int?
+  height       Int?
+  purpose      FilePurpose
+  variants     Json?
+  ownerUserId  String?        @db.Uuid
+  status       FileStatus     @default(READY)
+  meta         Json?
+  createdAt    DateTime       @default(now()) @db.Timestamptz(3)
+
+  kybDocuments      KybDocument[]
+  productImages     ProductImage[]
+  categoryImages    Category[]     @relation("CategoryImage")
+  brandLogos        Brand[]        @relation("BrandLogo")
+  bannerImages      Banner[]       @relation("BannerImage")
+  bannerMobile      Banner[]       @relation("BannerMobileImage")
+  blogCovers        BlogPost[]     @relation("BlogCover")
+  documents         Document[]
+
+  @@index([purpose])
+  @@map("files")
+}
+
+model Document {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  type            DocumentType
+  number          String?
+  fileId          String       @db.Uuid
+  titleAr         String?
+  titleEn         String?
+  orderId         String?      @db.Uuid
+  supplierOrderId String?      @db.Uuid
+  invoiceId       String?      @db.Uuid
+  shipmentId      String?      @db.Uuid
+  quotationId     String?      @db.Uuid
+  companyId       String?      @db.Uuid
+  supplierId      String?      @db.Uuid
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+
+  file          StoredFile     @relation(fields: [fileId], references: [id])
+  order         Order?         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  supplierOrder SupplierOrder? @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  invoice       Invoice?       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  shipment      Shipment?      @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  quotation     Quotation?     @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([companyId, type])
+  @@index([supplierId, type])
+  @@map("documents")
+}
+
+model AuditLog {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  actorType  ActorType
+  actorId    String?   @db.Uuid
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  meta       Json?
+  ip         String?
+  userAgent  String?
+  requestId  String?
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model OutboxEvent {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  type        String
+  payload     Json
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  availableAt DateTime     @default(now()) @db.Timestamptz(3)
+  publishedAt DateTime?    @db.Timestamptz(3)
+  lastError   String?
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+
+  @@index([status, availableAt])
+  @@map("outbox_events")
+}
+
+model DocumentSequence {
+  key       String   @id
+  value     Int      @default(0)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("document_sequences")
+}
+
+model WebhookEvent {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  provider       String
+  eventId        String
+  signatureValid Boolean
+  payload        Json
+  processedAt    DateTime? @db.Timestamptz(3)
+  error          String?
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@unique([provider, eventId])
+  @@map("webhook_events")
+}
+
+/// Key/value store with TTL used instead of Redis on serverless hosts (KV_DRIVER=postgres): OTPs, rate limits, locks.
+model KvEntry {
+  key       String    @id
+  value     String
+  expiresAt DateTime? @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("kv_entries")
+}

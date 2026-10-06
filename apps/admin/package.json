@@ -1,0 +1,45 @@
+{
+  "name": "@tawreed/admin",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/copy-maplibre.mjs",
+    "dev": "next dev --port 3031",
+    "prebuild": "node scripts/copy-maplibre.mjs",
+    "build": "next build",
+    "start": "next start --port 3031",
+    "typecheck": "next typegen && tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.104.0",
+    "@tawreed/api-client": "workspace:*",
+    "@tawreed/contracts": "workspace:*",
+    "@tawreed/i18n": "workspace:*",
+    "@tawreed/next-kit": "workspace:*",
+    "@tawreed/tokens": "workspace:*",
+    "@tawreed/ui": "workspace:*",
+    "cmdk": "^1.1.1",
+    "lucide-react": "^1.48.0",
+    "maplibre-gl": "^6.11.2",
+    "next": "16.3.6",
+    "next-intl": "^4.14.7",
+    "radix-ui": "^1.6.7",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "server-only": "^0.0.1",
+    "sonner": "^2.0.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tawreed/eslint-config": "workspace:*",
+    "@tawreed/tsconfig": "workspace:*",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "6.0.3"
+  }
+}

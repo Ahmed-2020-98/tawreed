@@ -1,0 +1,24 @@
+{
+  "name": "@tawreed/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Typed HTTP client + TanStack Query hooks for the Tawreed API (web and mobile)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": { "@tawreed/contracts": "workspace:*" },
+  "peerDependencies": {},
+  "devDependencies": {
+    "@tawreed/eslint-config": "workspace:*",
+    "@tawreed/tsconfig": "workspace:*",
+    "eslint": "^9.39.1",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.2"
+  }
+}

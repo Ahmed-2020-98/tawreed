@@ -1,0 +1,12 @@
+{
+  "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
+  "build": {
+    "base": {
+      "pnpm": "9.15.9",
+      "env": { "EXPO_PUBLIC_API_URL": "https://tawreed-api.vercel.app", "EXPO_PUBLIC_REALTIME": "off" }
+    },
+    "preview": { "extends": "base", "distribution": "internal", "android": { "buildType": "apk" } },
+    "production": { "extends": "base", "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+  },
+  "submit": { "production": { "android": { "track": "internal", "releaseStatus": "draft" } } }
+}

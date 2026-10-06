@@ -1,0 +1,225 @@
+enum PaymentPreference {
+  ANY
+  CASH
+  CREDIT
+}
+
+enum RfqVisibility {
+  TARGETED
+  OPEN
+}
+
+enum RfqStatus {
+  DRAFT
+  OPEN
+  QUOTED
+  AWARDED
+  CLOSED
+  CANCELLED
+  EXPIRED
+}
+
+enum InvitationStatus {
+  INVITED
+  VIEWED
+  QUOTED
+  DECLINED
+}
+
+enum QuotationStatus {
+  SUBMITTED
+  REVISION_REQUESTED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  WITHDRAWN
+}
+
+enum QuotationVersionStatus {
+  SUBMITTED
+  SUPERSEDED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model Rfq {
+  id                 String            @id @default(uuid(7)) @db.Uuid
+  number             String            @unique
+  companyId          String            @db.Uuid
+  createdById        String            @db.Uuid
+  title              String
+  cityId             String            @db.Uuid
+  addressId          String?           @db.Uuid
+  neededBy           DateTime?         @db.Date
+  paymentPreference  PaymentPreference @default(ANY)
+  storageType        StorageType?
+  notes              String?
+  attachmentFileIds  String[]
+  visibility         RfqVisibility     @default(OPEN)
+  status             RfqStatus         @default(OPEN)
+  expiresAt          DateTime?         @db.Timestamptz(3)
+  awardedQuotationId String?           @unique @db.Uuid
+  quotesCount        Int               @default(0)
+  submittedAt        DateTime?         @db.Timestamptz(3)
+  closedAt           DateTime?         @db.Timestamptz(3)
+  createdAt          DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @db.Timestamptz(3)
+
+  company     BuyerCompany    @relation(fields: [companyId], references: [id])
+  city        City            @relation(fields: [cityId], references: [id])
+  items       RfqItem[]
+  invitations RfqInvitation[]
+  quotations  Quotation[]     @relation("RfqQuotations")
+  awarded     Quotation?      @relation("AwardedQuotation", fields: [awardedQuotationId], references: [id])
+  orders      Order[]
+
+  @@index([companyId, status])
+  @@index([status, expiresAt])
+  @@map("rfqs")
+}
+
+model RfqItem {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  rfqId           String   @db.Uuid
+  productId       String?  @db.Uuid
+  productUnitId   String?  @db.Uuid
+  name            String
+  specs           String?
+  qty             Decimal  @db.Decimal(14, 3)
+  unitLabelAr     String
+  unitLabelEn     String
+  targetUnitPrice Decimal? @db.Decimal(14, 2)
+  sortOrder       Int      @default(0)
+
+  rfq            Rfq             @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  product        Product?        @relation(fields: [productId], references: [id])
+  quotationItems QuotationItem[]
+
+  @@index([rfqId])
+  @@map("rfq_items")
+}
+
+model RfqInvitation {
+  id            String           @id @default(uuid(7)) @db.Uuid
+  rfqId         String           @db.Uuid
+  supplierId    String           @db.Uuid
+  status        InvitationStatus @default(INVITED)
+  viewedAt      DateTime?        @db.Timestamptz(3)
+  respondedAt   DateTime?        @db.Timestamptz(3)
+  declineReason String?
+  createdAt     DateTime         @default(now()) @db.Timestamptz(3)
+
+  rfq      Rfq      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@unique([rfqId, supplierId])
+  @@index([supplierId, status])
+  @@map("rfq_invitations")
+}
+
+model Quotation {
+  id                String          @id @default(uuid(7)) @db.Uuid
+  number            String          @unique
+  rfqId             String          @db.Uuid
+  supplierId        String          @db.Uuid
+  status            QuotationStatus @default(SUBMITTED)
+  currentVersion    Int             @default(1)
+  acceptedVersionId String?         @unique @db.Uuid
+  createdAt         DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime        @updatedAt @db.Timestamptz(3)
+
+  rfq             Rfq                 @relation("RfqQuotations", fields: [rfqId], references: [id], onDelete: Cascade)
+  supplier        Supplier            @relation(fields: [supplierId], references: [id])
+  versions        QuotationVersion[]  @relation("QuotationVersions")
+  acceptedVersion QuotationVersion?   @relation("AcceptedVersion", fields: [acceptedVersionId], references: [id])
+  messages        QuotationMessage[]
+  order           Order?
+  awardedFor      Rfq?                @relation("AwardedQuotation")
+  documents       Document[]
+
+  @@unique([rfqId, supplierId])
+  @@index([supplierId, status])
+  @@map("quotations")
+}
+
+model QuotationVersion {
+  id             String                 @id @default(uuid(7)) @db.Uuid
+  quotationId    String                 @db.Uuid
+  version        Int
+  subtotal       Decimal                @db.Decimal(14, 2)
+  deliveryFee    Decimal                @default(0) @db.Decimal(14, 2)
+  vatTotal       Decimal                @db.Decimal(14, 2)
+  total          Decimal                @db.Decimal(14, 2)
+  validUntil     DateTime               @db.Timestamptz(3)
+  leadTimeDays   Int                    @default(2)
+  paymentMethods PaymentMethod[]
+  notes          String?
+  changeSummary  String?
+  status         QuotationVersionStatus @default(SUBMITTED)
+  snapshotHash   String?
+  createdById    String                 @db.Uuid
+  createdAt      DateTime               @default(now()) @db.Timestamptz(3)
+
+  quotation  Quotation           @relation("QuotationVersions", fields: [quotationId], references: [id], onDelete: Cascade)
+  items      QuotationItem[]
+  acceptedOf Quotation?          @relation("AcceptedVersion")
+  approval   ElectronicApproval?
+
+  @@unique([quotationId, version])
+  @@map("quotation_versions")
+}
+
+model QuotationItem {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  versionId   String   @db.Uuid
+  rfqItemId   String   @db.Uuid
+  offerId     String?  @db.Uuid
+  description String
+  qty         Decimal  @db.Decimal(14, 3)
+  unitPrice   Decimal  @db.Decimal(14, 2)
+  vatRate     Decimal  @default(0.15) @db.Decimal(5, 4)
+  lineTotal   Decimal  @db.Decimal(14, 2)
+  notes       String?
+
+  version QuotationVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  rfqItem RfqItem          @relation(fields: [rfqItemId], references: [id])
+
+  @@index([versionId])
+  @@map("quotation_items")
+}
+
+model QuotationMessage {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  quotationId String    @db.Uuid
+  senderType  ActorType
+  senderId    String    @db.Uuid
+  body        String
+  fileIds     String[]
+  readAt      DateTime? @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId, createdAt])
+  @@map("quotation_messages")
+}
+
+model ElectronicApproval {
+  id                 String   @id @default(uuid(7)) @db.Uuid
+  quotationVersionId String   @unique @db.Uuid
+  userId             String   @db.Uuid
+  companyId          String   @db.Uuid
+  otpVerifiedAt      DateTime @db.Timestamptz(3)
+  ip                 String?
+  userAgent          String?
+  deviceId           String?
+  approvalText       String
+  termsVersion       String
+  snapshotHash       String
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+
+  quotationVersion QuotationVersion @relation(fields: [quotationVersionId], references: [id], onDelete: Cascade)
+
+  @@map("electronic_approvals")
+}

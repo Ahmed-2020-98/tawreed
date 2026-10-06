@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 290" width="350" height="290" role="img" aria-label="Tawreed — توريد">
+  <title>Tawreed — توريد</title>
+  <defs>
+    <linearGradient id="mk-blade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B3F74"/><stop offset="0.45" stop-color="#0B2D5B"/><stop offset="1" stop-color="#051A38"/>
+    </linearGradient>
+    <linearGradient id="mk-road" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#067A5B"/><stop offset="0.55" stop-color="#0A9B69"/><stop offset="1" stop-color="#17AE7C"/>
+    </linearGradient>
+  </defs><g transform="translate(0 0) scale(1)">
+    <path d="M73 27 C120 12 190 0 255 0 C295 0 325 15 340 40 C352 70 348 115 335 147 C322 112 290 72 245 53 C200 42 130 36 85 35 Q72 34 73 27 Z" fill="url(#mk-blade)"/>
+    <path d="M3 285 C90 245 190 160 223 113 C220 160 175 235 115 285 Z" fill="url(#mk-road)"/>
+    <path d="M165 285 C212 238 252 168 237 112 C233 100 226 92 217 88 C265 95 322 140 326 205 C328 240 315 268 290 285 Z" fill="url(#mk-road)"/>
+  </g>
+</svg>

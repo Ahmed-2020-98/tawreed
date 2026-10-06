@@ -1,0 +1,56 @@
+{
+  "name": "@tawreed/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared React Native kit for the three Tawreed Expo apps",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@formatjs/intl-getcanonicallocales": "^3.2.12",
+    "@formatjs/intl-locale": "^5.3.12",
+    "@formatjs/intl-pluralrules": "^6.3.15",
+    "@tanstack/react-query": "^5.104.0",
+    "@tawreed/api-client": "workspace:*",
+    "@tawreed/contracts": "workspace:*",
+    "@tawreed/i18n": "workspace:*",
+    "@tawreed/tokens": "workspace:*",
+    "lucide-react-native": "^1.48.0",
+    "socket.io-client": "^4.8.1",
+    "use-intl": "^4.14.7"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "expo-font": "*",
+    "expo-image": "*",
+    "expo-localization": "*",
+    "expo-router": "*",
+    "expo-secure-store": "*",
+    "react": "19.2.3",
+    "react-native": "*",
+    "react-native-maps": "*",
+    "react-native-reanimated": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-svg": "*",
+    "expo-constants": "*",
+    "expo-haptics": "*",
+    "expo-splash-screen": "*",
+    "expo-status-bar": "*",
+    "react-native-gesture-handler": "*"
+  },
+  "devDependencies": {
+    "@tawreed/eslint-config": "workspace:*",
+    "@tawreed/tsconfig": "workspace:*",
+    "eslint": "^9.39.1",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.2",
+    "@types/react": "~19.2.2",
+    "expo": "~57.0.25"
+  }
+}

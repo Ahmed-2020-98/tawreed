@@ -1,0 +1,115 @@
+enum UserType {
+  BUYER
+  SUPPLIER
+  DRIVER
+  STAFF
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum StaffRole {
+  SUPER_ADMIN
+  ADMIN
+  OPERATIONS
+  CATALOG_MANAGER
+  FINANCE
+  CREDIT_MANAGER
+  LOGISTICS
+  SUPPORT
+  MARKETING
+}
+
+enum AppClient {
+  WEB
+  ADMIN
+  SUPPLIER_WEB
+  BUYER_APP
+  SUPPLIER_APP
+  DRIVER_APP
+}
+
+enum ContextType {
+  BUYER
+  SUPPLIER
+  DRIVER
+  STAFF
+}
+
+model User {
+  id                 String      @id @default(uuid(7)) @db.Uuid
+  type               UserType
+  name               String
+  phone              String?     @unique
+  email              String?     @unique
+  passwordHash       String?
+  status             UserStatus  @default(ACTIVE)
+  locale             String      @default("ar")
+  avatarFileId       String?     @db.Uuid
+  staffRoles         StaffRole[]
+  jobTitle           String?
+  phoneVerifiedAt    DateTime?   @db.Timestamptz(3)
+  emailVerifiedAt    DateTime?   @db.Timestamptz(3)
+  lastLoginAt        DateTime?   @db.Timestamptz(3)
+  twoFactorEnabled   Boolean     @default(false)
+  twoFactorSecretEnc String?
+  createdAt          DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime    @updatedAt @db.Timestamptz(3)
+  deletedAt          DateTime?   @db.Timestamptz(3)
+
+  sessions            Session[]
+  pushTokens          PushToken[]
+  buyerMemberships    BuyerMember[]    @relation("BuyerMemberUser")
+  supplierMemberships SupplierMember[] @relation("SupplierMemberUser")
+  driver              Driver?
+  notifications       Notification[]
+  notificationPrefs   NotificationPreference[]
+  favorites           Favorite[]
+  priceAlerts         PriceAlert[]
+  managedCompanies    BuyerCompany[]   @relation("AccountManager")
+
+  @@index([type, status])
+  @@map("users")
+}
+
+model Session {
+  id                String      @id @default(uuid(7)) @db.Uuid
+  userId            String      @db.Uuid
+  app               AppClient
+  contextType       ContextType
+  contextId         String?     @db.Uuid
+  refreshTokenHash  String      @unique
+  previousTokenHash String?     @unique
+  deviceId          String?
+  deviceName        String?
+  ip                String?
+  userAgent         String?
+  lastUsedAt        DateTime    @default(now()) @db.Timestamptz(3)
+  expiresAt         DateTime    @db.Timestamptz(3)
+  revokedAt         DateTime?   @db.Timestamptz(3)
+  revokedReason     String?
+  createdAt         DateTime    @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model PushToken {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @db.Uuid
+  app        AppClient
+  token      String    @unique
+  platform   String
+  lastSeenAt DateTime  @default(now()) @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_tokens")
+}

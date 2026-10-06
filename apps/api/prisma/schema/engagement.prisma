@@ -1,0 +1,248 @@
+enum DisputeReason {
+  MISSING_ITEMS
+  DAMAGED
+  WRONG_ITEMS
+  QUALITY
+  LATE_DELIVERY
+  OVERCHARGED
+  OTHER
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  AWAITING_BUYER
+  RESOLVED
+  REJECTED
+  CLOSED
+}
+
+enum DisputeResolution {
+  CREDIT_NOTE
+  REFUND
+  REPLACEMENT
+  NO_ACTION
+}
+
+enum TicketCategory {
+  ORDER
+  PAYMENT
+  ACCOUNT
+  TECHNICAL
+  OTHER
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  PENDING
+  RESOLVED
+  CLOSED
+}
+
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  SMS
+  EMAIL
+}
+
+enum NotificationCategory {
+  ORDERS
+  PAYMENTS
+  RFQ
+  DELIVERY
+  PROMOTIONS
+  ACCOUNT
+  SYSTEM
+}
+
+enum DeliveryResult {
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model Review {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  supplierOrderId String    @unique @db.Uuid
+  companyId       String    @db.Uuid
+  supplierId      String    @db.Uuid
+  userId          String    @db.Uuid
+  rating          Int
+  qualityRating   Int?
+  deliveryRating  Int?
+  comment         String?
+  supplierReply   String?
+  repliedAt       DateTime? @db.Timestamptz(3)
+  isHidden        Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+
+  supplierOrder SupplierOrder @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  company       BuyerCompany  @relation(fields: [companyId], references: [id])
+  supplier      Supplier      @relation(fields: [supplierId], references: [id])
+
+  @@index([supplierId, createdAt])
+  @@map("reviews")
+}
+
+model Dispute {
+  id               String             @id @default(uuid(7)) @db.Uuid
+  number           String             @unique
+  supplierOrderId  String             @db.Uuid
+  orderId          String             @db.Uuid
+  companyId        String             @db.Uuid
+  supplierId       String             @db.Uuid
+  openedById       String             @db.Uuid
+  reason           DisputeReason
+  description      String
+  photoFileIds     String[]
+  status           DisputeStatus      @default(OPEN)
+  resolution       DisputeResolution?
+  resolutionAmount Decimal?           @db.Decimal(14, 2)
+  resolutionNote   String?
+  assignedToId     String?            @db.Uuid
+  resolvedById     String?            @db.Uuid
+  resolvedAt       DateTime?          @db.Timestamptz(3)
+  createdAt        DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime           @updatedAt @db.Timestamptz(3)
+
+  supplierOrder SupplierOrder    @relation(fields: [supplierOrderId], references: [id])
+  order         Order            @relation(fields: [orderId], references: [id])
+  company       BuyerCompany     @relation(fields: [companyId], references: [id])
+  supplier      Supplier         @relation(fields: [supplierId], references: [id])
+  items         DisputeItem[]
+  messages      DisputeMessage[]
+
+  @@index([status])
+  @@index([companyId])
+  @@index([supplierId])
+  @@map("disputes")
+}
+
+model DisputeItem {
+  id          String  @id @default(uuid(7)) @db.Uuid
+  disputeId   String  @db.Uuid
+  orderItemId String  @db.Uuid
+  qty         Decimal @db.Decimal(14, 3)
+  note        String?
+
+  dispute   Dispute   @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+
+  @@map("dispute_items")
+}
+
+model DisputeMessage {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  disputeId  String    @db.Uuid
+  senderType ActorType
+  senderId   String    @db.Uuid
+  body       String
+  fileIds    String[]
+  isInternal Boolean   @default(false)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+
+  dispute Dispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+
+  @@index([disputeId, createdAt])
+  @@map("dispute_messages")
+}
+
+model SupportTicket {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  number         String         @unique
+  requesterId    String         @db.Uuid
+  requesterType  ActorType
+  companyId      String?        @db.Uuid
+  supplierId     String?        @db.Uuid
+  subject        String
+  category       TicketCategory @default(OTHER)
+  priority       TicketPriority @default(NORMAL)
+  status         TicketStatus   @default(OPEN)
+  assignedToId   String?        @db.Uuid
+  relatedOrderId String?        @db.Uuid
+  lastMessageAt  DateTime       @default(now()) @db.Timestamptz(3)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(3)
+
+  company  BuyerCompany?   @relation(fields: [companyId], references: [id])
+  supplier Supplier?       @relation(fields: [supplierId], references: [id])
+  messages TicketMessage[]
+
+  @@index([status, lastMessageAt])
+  @@index([requesterId])
+  @@map("support_tickets")
+}
+
+model TicketMessage {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  ticketId   String    @db.Uuid
+  senderId   String    @db.Uuid
+  senderType ActorType
+  body       String
+  fileIds    String[]
+  isInternal Boolean   @default(false)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_messages")
+}
+
+model Notification {
+  id        String               @id @default(uuid(7)) @db.Uuid
+  userId    String               @db.Uuid
+  category  NotificationCategory
+  type      String
+  titleAr   String
+  titleEn   String
+  bodyAr    String
+  bodyEn    String
+  data      Json?
+  readAt    DateTime?            @db.Timestamptz(3)
+  createdAt DateTime             @default(now()) @db.Timestamptz(3)
+
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+model NotificationDelivery {
+  id             String              @id @default(uuid(7)) @db.Uuid
+  notificationId String?             @db.Uuid
+  userId         String              @db.Uuid
+  channel        NotificationChannel
+  result         DeliveryResult
+  provider       String?
+  target         String?
+  error          String?
+  createdAt      DateTime            @default(now()) @db.Timestamptz(3)
+
+  notification Notification? @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("notification_deliveries")
+}
+
+model NotificationPreference {
+  id       String               @id @default(uuid(7)) @db.Uuid
+  userId   String               @db.Uuid
+  channel  NotificationChannel
+  category NotificationCategory
+  enabled  Boolean              @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channel, category])
+  @@map("notification_preferences")
+}

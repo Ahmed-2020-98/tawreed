@@ -1,0 +1,43 @@
+{
+  "name": "tawreed",
+  "private": true,
+  "description": "TAWREED (توريد) — Sary-style B2B wholesale marketplace for Saudi Arabia",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=@tawreed/api --filter=@tawreed/web --filter=@tawreed/admin --filter=@tawreed/supplier",
+    "dev:api": "turbo run dev --filter=@tawreed/api",
+    "dev:web": "turbo run dev --filter=@tawreed/api --filter=@tawreed/web",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration --concurrency=1",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "setup:dev": "node infra/scripts/setup-dev.mjs",
+    "db:migrate": "pnpm --filter @tawreed/api db:migrate",
+    "db:seed": "pnpm --filter @tawreed/api db:seed",
+    "db:reset": "pnpm --filter @tawreed/api db:reset",
+    "seed:media": "pnpm --filter @tawreed/api seed:media",
+    "e2e": "pnpm --filter @tawreed/e2e test",
+    "buyer-app": "pnpm --filter @tawreed/buyer-app start",
+    "supplier-app": "pnpm --filter @tawreed/supplier-app start",
+    "driver-app": "pnpm --filter @tawreed/driver-app start"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "^2.11.4",
+    "typescript": "6.0.3",
+    "@types/node": "^24.10.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
+      "typescript": "6.0.3"
+    }
+  }
+}

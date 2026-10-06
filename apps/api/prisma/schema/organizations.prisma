@@ -1,0 +1,394 @@
+enum BusinessType {
+  RETAIL
+  SUPERMARKET
+  RESTAURANT
+  CAFE
+  HOTEL
+  CATERING
+  COMPANY
+  OTHER
+}
+
+enum VerificationStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  NEEDS_INFO
+}
+
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum BuyerRole {
+  OWNER
+  PURCHASER
+  ACCOUNTANT
+  VIEWER
+}
+
+enum SupplierRole {
+  OWNER
+  MANAGER
+  SALES
+  WAREHOUSE
+  FINANCE
+}
+
+enum MemberStatus {
+  INVITED
+  ACTIVE
+  REMOVED
+}
+
+enum SupplierStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REJECTED
+}
+
+enum FleetMode {
+  OWN
+  PLATFORM
+  BOTH
+}
+
+enum ApplicationStatus {
+  NEW
+  CONTACTED
+  APPROVED
+  REJECTED
+}
+
+enum KybDocType {
+  COMMERCIAL_REGISTRATION
+  VAT_CERTIFICATE
+  NATIONAL_ADDRESS
+  IBAN_LETTER
+  AUTHORIZATION_LETTER
+  FOOD_SAFETY_LICENSE
+  OTHER
+}
+
+enum DocReviewStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Region {
+  id     String @id @default(uuid(7)) @db.Uuid
+  code   String @unique
+  nameAr String
+  nameEn String
+  cities City[]
+
+  @@map("regions")
+}
+
+model City {
+  id        String  @id @default(uuid(7)) @db.Uuid
+  regionId  String  @db.Uuid
+  slug      String  @unique
+  nameAr    String
+  nameEn    String
+  lat       Float
+  lng       Float
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  region            Region               @relation(fields: [regionId], references: [id])
+  buyerCompanies    BuyerCompany[]
+  addresses         BuyerAddress[]
+  suppliers         Supplier[]
+  warehouses        SupplierWarehouse[]
+  coverage          SupplierCoverage[]
+  applications      SupplierApplication[]
+  rfqs              Rfq[]
+  leads             Lead[]
+
+  @@map("cities")
+}
+
+model BuyerCompany {
+  id                 String             @id @default(uuid(7)) @db.Uuid
+  name               String
+  legalName          String?
+  businessType       BusinessType
+  crNumber           String?            @unique
+  vatNumber          String?            @unique
+  cityId             String?            @db.Uuid
+  logoFileId         String?            @db.Uuid
+  phone              String?
+  email              String?
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedAt         DateTime?          @db.Timestamptz(3)
+  status             CompanyStatus      @default(ACTIVE)
+  accountManagerId   String?            @db.Uuid
+  branchesCount      Int                @default(1)
+  monthlyVolume      String?
+  searchText         String             @default("")
+  createdAt          DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime           @updatedAt @db.Timestamptz(3)
+  deletedAt          DateTime?          @db.Timestamptz(3)
+
+  city           City?              @relation(fields: [cityId], references: [id])
+  accountManager User?              @relation("AccountManager", fields: [accountManagerId], references: [id])
+  members        BuyerMember[]
+  addresses      BuyerAddress[]
+  documents      KybDocument[]
+  kybReviews     KybReview[]
+  carts          Cart[]
+  orders         Order[]
+  rfqs           Rfq[]
+  creditAccount  CreditAccount?
+  creditApps     CreditApplication[]
+  invoices       Invoice[]
+  payments       Payment[]
+  collections    CollectionActivity[]
+  reviews        Review[]
+  disputes       Dispute[]
+  tickets        SupportTicket[]
+  shoppingLists  ShoppingList[]
+  couponUses     CouponRedemption[]
+
+  @@index([verificationStatus])
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@map("buyer_companies")
+}
+
+model BuyerMember {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  companyId   String       @db.Uuid
+  userId      String       @db.Uuid
+  role        BuyerRole
+  status      MemberStatus @default(ACTIVE)
+  invitedById String?      @db.Uuid
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+
+  company BuyerCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User         @relation("BuyerMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@index([userId])
+  @@map("buyer_members")
+}
+
+model BuyerAddress {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  companyId        String    @db.Uuid
+  label            String
+  recipientName    String
+  recipientPhone   String
+  cityId           String    @db.Uuid
+  district         String
+  street           String?
+  buildingNumber   String?
+  postalCode       String?
+  additionalNumber String?
+  shortAddress     String?
+  lat              Float
+  lng              Float
+  notes            String?
+  isDefault        Boolean   @default(false)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt        DateTime? @db.Timestamptz(3)
+
+  company BuyerCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  city    City         @relation(fields: [cityId], references: [id])
+
+  @@index([companyId])
+  @@map("buyer_addresses")
+}
+
+model Supplier {
+  id                 String             @id @default(uuid(7)) @db.Uuid
+  slug               String             @unique
+  nameAr             String
+  nameEn             String
+  legalName          String?
+  descriptionAr      String?
+  descriptionEn      String?
+  logoFileId         String?            @db.Uuid
+  coverFileId        String?            @db.Uuid
+  crNumber           String?            @unique
+  vatNumber          String?            @unique
+  iban               String?
+  bankName           String?
+  beneficiaryName    String?
+  commissionRate     Decimal            @default(0.05) @db.Decimal(5, 4)
+  minOrderValue      Decimal            @default(0) @db.Decimal(14, 2)
+  fleetMode          FleetMode          @default(OWN)
+  status             SupplierStatus     @default(PENDING)
+  verificationStatus VerificationStatus @default(PENDING)
+  ratingAvg          Decimal            @default(0) @db.Decimal(3, 2)
+  ratingCount        Int                @default(0)
+  acceptanceRate     Decimal            @default(1) @db.Decimal(5, 4)
+  contactPhone       String?
+  contactEmail       String?
+  cityId             String?            @db.Uuid
+  isFeatured         Boolean            @default(false)
+  foundedYear        Int?
+  searchText         String             @default("")
+  createdAt          DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime           @updatedAt @db.Timestamptz(3)
+  deletedAt          DateTime?          @db.Timestamptz(3)
+
+  city            City?                 @relation(fields: [cityId], references: [id])
+  members         SupplierMember[]
+  warehouses      SupplierWarehouse[]
+  coverage        SupplierCoverage[]
+  documents       KybDocument[]
+  kybReviews      KybReview[]
+  offers          Offer[]
+  deals           Deal[]
+  proposedProducts Product[]            @relation("ProposedBy")
+  supplierOrders  SupplierOrder[]
+  rfqInvitations  RfqInvitation[]
+  quotations      Quotation[]
+  drivers         Driver[]
+  vehicles        Vehicle[]
+  shipments       Shipment[]
+  invoices        Invoice[]
+  settlements     SupplierSettlement[]
+  reviews         Review[]
+  disputes        Dispute[]
+  tickets         SupportTicket[]
+  application     SupplierApplication?
+
+  @@index([status])
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@map("suppliers")
+}
+
+model SupplierMember {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  supplierId  String       @db.Uuid
+  userId      String       @db.Uuid
+  role        SupplierRole
+  status      MemberStatus @default(ACTIVE)
+  invitedById String?      @db.Uuid
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  user     User     @relation("SupplierMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([supplierId, userId])
+  @@index([userId])
+  @@map("supplier_members")
+}
+
+model SupplierWarehouse {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  supplierId   String   @db.Uuid
+  name         String
+  cityId       String   @db.Uuid
+  district     String?
+  street       String?
+  lat          Float
+  lng          Float
+  contactPhone String?
+  isDefault    Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  supplier  Supplier   @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  city      City       @relation(fields: [cityId], references: [id])
+  shipments Shipment[]
+
+  @@index([supplierId])
+  @@map("supplier_warehouses")
+}
+
+model SupplierCoverage {
+  id                    String   @id @default(uuid(7)) @db.Uuid
+  supplierId            String   @db.Uuid
+  cityId                String   @db.Uuid
+  deliveryFee           Decimal  @default(0) @db.Decimal(14, 2)
+  freeDeliveryThreshold Decimal? @db.Decimal(14, 2)
+  leadTimeDays          Int      @default(1)
+  sameDayAvailable      Boolean  @default(false)
+  cutoffTime            String?
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  city     City     @relation(fields: [cityId], references: [id])
+
+  @@unique([supplierId, cityId])
+  @@index([cityId])
+  @@map("supplier_coverage")
+}
+
+model SupplierApplication {
+  id           String            @id @default(uuid(7)) @db.Uuid
+  companyName  String
+  contactName  String
+  phone        String
+  email        String?
+  cityId       String?           @db.Uuid
+  categories   String[]
+  crNumber     String?
+  vatNumber    String?
+  message      String?
+  status       ApplicationStatus @default(NEW)
+  supplierId   String?           @unique @db.Uuid
+  reviewedById String?           @db.Uuid
+  notes        String?
+  createdAt    DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime          @updatedAt @db.Timestamptz(3)
+
+  city     City?     @relation(fields: [cityId], references: [id])
+  supplier Supplier? @relation(fields: [supplierId], references: [id])
+
+  @@index([status])
+  @@map("supplier_applications")
+}
+
+model KybDocument {
+  id             String          @id @default(uuid(7)) @db.Uuid
+  buyerCompanyId String?         @db.Uuid
+  supplierId     String?         @db.Uuid
+  type           KybDocType
+  fileId         String          @db.Uuid
+  status         DocReviewStatus @default(PENDING)
+  expiresAt      DateTime?       @db.Date
+  reviewNote     String?
+  reviewedById   String?         @db.Uuid
+  reviewedAt     DateTime?       @db.Timestamptz(3)
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+
+  buyerCompany BuyerCompany? @relation(fields: [buyerCompanyId], references: [id], onDelete: Cascade)
+  supplier     Supplier?     @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  file         StoredFile    @relation(fields: [fileId], references: [id])
+
+  @@index([buyerCompanyId])
+  @@index([supplierId])
+  @@map("kyb_documents")
+}
+
+model KybReview {
+  id                String             @id @default(uuid(7)) @db.Uuid
+  buyerCompanyId    String?            @db.Uuid
+  supplierId        String?            @db.Uuid
+  fromStatus        VerificationStatus
+  toStatus          VerificationStatus
+  note              String?
+  requestedDocTypes KybDocType[]
+  reviewerId        String?            @db.Uuid
+  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
+
+  buyerCompany BuyerCompany? @relation(fields: [buyerCompanyId], references: [id], onDelete: Cascade)
+  supplier     Supplier?     @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@map("kyb_reviews")
+}

@@ -1,0 +1,82 @@
+{
+  "expo": {
+    "name": "توريد",
+    "slug": "tawreed-buyer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "tawreed-buyer",
+    "userInterfaceStyle": "light",
+    "primaryColor": "#067A5B",
+    "ios": {
+      "bundleIdentifier": "sa.tawreed.buyer",
+      "supportsTablet": false,
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "ar",
+        "NSCameraUsageDescription": "نستخدم الكاميرا لمسح باركود المنتجات وتصوير المستندات.",
+        "NSPhotoLibraryUsageDescription": "لرفع إيصالات التحويل ومستندات المنشأة.",
+        "NSLocationWhenInUseUsageDescription": "لتحديد موقع التوصيل على الخريطة.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "android": {
+      "package": "sa.tawreed.buyer",
+      "adaptiveIcon": {
+        "backgroundColor": "#067A5B",
+        "foregroundImage": "./assets/images/adaptive-foreground.png"
+      },
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-localization",
+        {
+          "supportsRTL": true
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#067A5B",
+          "image": "./assets/images/splash.png",
+          "imageWidth": 160
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "نستخدم الكاميرا لمسح باركود المنتجات وتصوير المستندات."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "لتحديد موقع التوصيل على الخريطة."
+        }
+      ],
+      "expo-font"
+    ],
+    "extra": {
+      "appClient": "BUYER_APP",
+      "supportsRTL": true,
+      "router": {},
+      "eas": {
+        "projectId": "e01104b1-27fc-42d7-9ae9-bed9e0bd4825"
+      }
+    },
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "owner": "ahmedgamalmansour11sa"
+  }
+}

@@ -1,0 +1,320 @@
+enum StorageType {
+  AMBIENT
+  CHILLED
+  FROZEN
+}
+
+enum ProductStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  REJECTED
+  ARCHIVED
+}
+
+enum UnitCode {
+  PIECE
+  PACK
+  BOX
+  CARTON
+  BAG
+  SACK
+  KG
+  TON
+  LITER
+  BOTTLE
+  CAN
+  TRAY
+  PALLET
+}
+
+enum StockMode {
+  TRACKED
+  UNLIMITED
+  ON_REQUEST
+}
+
+enum OfferStatus {
+  ACTIVE
+  PAUSED
+  PENDING_REVIEW
+  REJECTED
+  ARCHIVED
+}
+
+enum DealStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ListRecurrence {
+  NONE
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+model Category {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  parentId       String?   @db.Uuid
+  slug           String    @unique
+  nameAr         String
+  nameEn         String
+  descriptionAr  String?
+  descriptionEn  String?
+  icon           String?
+  imageFileId    String?   @db.Uuid
+  sortOrder      Int       @default(0)
+  isActive       Boolean   @default(true)
+  isFeatured     Boolean   @default(false)
+  commissionRate Decimal?  @db.Decimal(5, 4)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt      DateTime? @db.Timestamptz(3)
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  image    StoredFile? @relation("CategoryImage", fields: [imageFileId], references: [id])
+  products Product[]
+  coupons  Coupon[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Brand {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  slug          String    @unique
+  nameAr        String
+  nameEn        String
+  logoFileId    String?   @db.Uuid
+  originCountry String?
+  isFeatured    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt     DateTime? @db.Timestamptz(3)
+
+  logo     StoredFile? @relation("BrandLogo", fields: [logoFileId], references: [id])
+  products Product[]
+
+  @@map("brands")
+}
+
+model Product {
+  id                   String        @id @default(uuid(7)) @db.Uuid
+  slug                 String        @unique
+  sku                  String?       @unique
+  barcode              String?
+  categoryId           String        @db.Uuid
+  brandId              String?       @db.Uuid
+  nameAr               String
+  nameEn               String
+  descriptionAr        String?
+  descriptionEn        String?
+  originCountry        String?
+  storageType          StorageType   @default(AMBIENT)
+  specs                Json          @default("[]")
+  tags                 String[]
+  status               ProductStatus @default(ACTIVE)
+  proposedBySupplierId String?       @db.Uuid
+  reviewNote           String?
+  isFeatured           Boolean       @default(false)
+  minPrice             Decimal?      @db.Decimal(14, 2)
+  maxPrice             Decimal?      @db.Decimal(14, 2)
+  offersCount          Int           @default(0)
+  salesCount           Int           @default(0)
+  searchText           String        @default("")
+  createdAt            DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime      @updatedAt @db.Timestamptz(3)
+  deletedAt            DateTime?     @db.Timestamptz(3)
+
+  category    Category        @relation(fields: [categoryId], references: [id])
+  brand       Brand?          @relation(fields: [brandId], references: [id])
+  proposedBy  Supplier?       @relation("ProposedBy", fields: [proposedBySupplierId], references: [id])
+  units       ProductUnit[]
+  images      ProductImage[]
+  offers      Offer[]
+  favorites   Favorite[]
+  priceAlerts PriceAlert[]
+  rfqItems    RfqItem[]
+
+  @@index([categoryId, status])
+  @@index([brandId])
+  @@index([status, salesCount])
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@map("products")
+}
+
+model ProductUnit {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  productId    String   @db.Uuid
+  code         UnitCode
+  nameAr       String
+  nameEn       String
+  baseQuantity Decimal  @default(1) @db.Decimal(14, 3)
+  baseUnitAr   String
+  baseUnitEn   String
+  barcode      String?
+  weightKg     Decimal? @db.Decimal(14, 3)
+  isDefault    Boolean  @default(false)
+  sortOrder    Int      @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  offers  Offer[]
+
+  @@index([productId])
+  @@map("product_units")
+}
+
+model ProductImage {
+  id        String  @id @default(uuid(7)) @db.Uuid
+  productId String  @db.Uuid
+  fileId    String  @db.Uuid
+  sortOrder Int     @default(0)
+  altAr     String?
+  altEn     String?
+
+  product Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  file    StoredFile @relation(fields: [fileId], references: [id])
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model Offer {
+  id             String      @id @default(uuid(7)) @db.Uuid
+  supplierId     String      @db.Uuid
+  productId      String      @db.Uuid
+  productUnitId  String      @db.Uuid
+  sku            String?
+  price          Decimal     @db.Decimal(14, 2)
+  compareAtPrice Decimal?    @db.Decimal(14, 2)
+  vatRate        Decimal     @default(0.15) @db.Decimal(5, 4)
+  minOrderQty    Decimal     @default(1) @db.Decimal(14, 3)
+  qtyStep        Decimal     @default(1) @db.Decimal(14, 3)
+  maxOrderQty    Decimal?    @db.Decimal(14, 3)
+  stockMode      StockMode   @default(TRACKED)
+  stockQty       Decimal     @default(0) @db.Decimal(14, 3)
+  reservedQty    Decimal     @default(0) @db.Decimal(14, 3)
+  leadTimeDays   Int?
+  status         OfferStatus @default(ACTIVE)
+  createdAt      DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime    @updatedAt @db.Timestamptz(3)
+  deletedAt      DateTime?   @db.Timestamptz(3)
+
+  supplier    Supplier         @relation(fields: [supplierId], references: [id])
+  product     Product          @relation(fields: [productId], references: [id])
+  unit        ProductUnit      @relation(fields: [productUnitId], references: [id])
+  tiers       OfferPriceTier[]
+  deals       Deal[]
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  listItems   ShoppingListItem[]
+
+  @@unique([supplierId, productUnitId])
+  @@index([productId, status])
+  @@index([supplierId, status])
+  @@map("offers")
+}
+
+model OfferPriceTier {
+  id      String  @id @default(uuid(7)) @db.Uuid
+  offerId String  @db.Uuid
+  minQty  Decimal @db.Decimal(14, 3)
+  price   Decimal @db.Decimal(14, 2)
+
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@unique([offerId, minQty])
+  @@map("offer_price_tiers")
+}
+
+model Deal {
+  id              String     @id @default(uuid(7)) @db.Uuid
+  offerId         String     @db.Uuid
+  supplierId      String     @db.Uuid
+  titleAr         String?
+  titleEn         String?
+  dealPrice       Decimal    @db.Decimal(14, 2)
+  startsAt        DateTime   @db.Timestamptz(3)
+  endsAt          DateTime   @db.Timestamptz(3)
+  maxQtyPerOrder  Decimal?   @db.Decimal(14, 3)
+  totalQtyCap     Decimal?   @db.Decimal(14, 3)
+  soldQty         Decimal    @default(0) @db.Decimal(14, 3)
+  status          DealStatus @default(PENDING_APPROVAL)
+  reviewedById    String?    @db.Uuid
+  reviewNote      String?
+  createdAt       DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime   @updatedAt @db.Timestamptz(3)
+
+  offer    Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@index([status, startsAt, endsAt])
+  @@index([offerId])
+  @@map("deals")
+}
+
+model Favorite {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @db.Uuid
+  productId String   @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("favorites")
+}
+
+model PriceAlert {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  userId         String    @db.Uuid
+  productId      String    @db.Uuid
+  targetPrice    Decimal?  @db.Decimal(14, 2)
+  lastSeenPrice  Decimal?  @db.Decimal(14, 2)
+  isActive       Boolean   @default(true)
+  lastNotifiedAt DateTime? @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("price_alerts")
+}
+
+model ShoppingList {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  companyId   String         @db.Uuid
+  createdById String         @db.Uuid
+  name        String
+  recurrence  ListRecurrence @default(NONE)
+  nextRunAt   DateTime?      @db.Timestamptz(3)
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime       @updatedAt @db.Timestamptz(3)
+
+  company BuyerCompany       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items   ShoppingListItem[]
+
+  @@index([companyId])
+  @@map("shopping_lists")
+}
+
+model ShoppingListItem {
+  id      String  @id @default(uuid(7)) @db.Uuid
+  listId  String  @db.Uuid
+  offerId String  @db.Uuid
+  qty     Decimal @db.Decimal(14, 3)
+
+  list  ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  offer Offer        @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, offerId])
+  @@map("shopping_list_items")
+}

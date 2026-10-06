@@ -1,0 +1,43 @@
+<div class="grid">
+  <div class="card">
+    <h3>{{l.seller}}</h3>
+    <div class="row"><span class="k">{{l.name}}</span><span class="v">{{seller.name}}</span></div>
+    <div class="row"><span class="k">{{l.vat}}</span><span class="v">{{seller.vatNumber}}</span></div>
+    <div class="row"><span class="k">{{l.cr}}</span><span class="v">{{seller.crNumber}}</span></div>
+    <div class="row"><span class="k">{{l.address}}</span><span class="v">{{seller.address}}</span></div>
+  </div>
+  <div class="card">
+    <h3>{{l.buyer}}</h3>
+    <div class="row"><span class="k">{{l.name}}</span><span class="v">{{buyer.name}}</span></div>
+    <div class="row"><span class="k">{{l.vat}}</span><span class="v">{{buyer.vatNumber}}</span></div>
+    <div class="row"><span class="k">{{l.cr}}</span><span class="v">{{buyer.crNumber}}</span></div>
+    <div class="row"><span class="k">{{l.address}}</span><span class="v">{{buyer.address}}</span></div>
+  </div>
+</div>
+<div class="grid">
+  <div class="card">
+    <div class="row"><span class="k">{{l.order}}</span><span class="v">{{orderNumber}}</span></div>
+    <div class="row"><span class="k">{{l.supplyDate}}</span><span class="v">{{supplyDate}}</span></div>
+  </div>
+  <div class="card">
+    <div class="row"><span class="k">{{l.payment}}</span><span class="v">{{paymentMethod}}</span></div>
+    <div class="row"><span class="k">{{l.dueDate}}</span><span class="v">{{dueDate}}</span></div>
+  </div>
+</div>
+<table>
+  <thead><tr><th>#</th><th>{{l.item}}</th><th class="num">{{l.qty}}</th><th class="num">{{l.unitPrice}}</th><th class="num">{{l.taxable}}</th><th class="num">{{l.vatRate}}</th><th class="num">{{l.vatAmount}}</th><th class="num">{{l.total}}</th></tr></thead>
+  <tbody>
+  {{#each lines}}<tr><td>{{this.index}}</td><td>{{this.description}}</td><td class="num">{{this.qty}}</td><td class="num">{{this.unitPrice}}</td><td class="num">{{this.taxable}}</td><td class="num">{{this.vatRate}}</td><td class="num">{{this.vatAmount}}</td><td class="num">{{this.lineTotal}}</td></tr>{{/each}}
+  </tbody>
+</table>
+<div class="totals">
+  <div class="row"><span class="k">{{l.subtotal}}</span><span class="v">{{totals.subtotal}}</span></div>
+  {{#if totals.hasDiscount}}<div class="row"><span class="k">{{l.discount}}</span><span class="v">- {{totals.discount}}</span></div>{{/if}}
+  <div class="row"><span class="k">{{l.delivery}}</span><span class="v">{{totals.delivery}}</span></div>
+  <div class="row"><span class="k">{{l.vatTotal}}</span><span class="v">{{totals.vat}}</span></div>
+  <div class="row grand"><span>{{l.grandTotal}}</span><span>{{totals.total}}</span></div>
+</div>
+<div class="footer">
+  <div class="note">{{l.footer}}<br/>{{platform}}</div>
+  <div class="qr"><img src="{{qr}}" alt="ZATCA QR" /></div>
+</div>

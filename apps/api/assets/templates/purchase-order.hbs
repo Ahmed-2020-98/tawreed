@@ -1,0 +1,27 @@
+<div class="grid">
+  <div class="card">
+    <h3>{{l.buyer}}</h3>
+    <div class="row"><span class="k">{{l.name}}</span><span class="v">{{buyer.name}}</span></div>
+    <div class="row"><span class="k">{{l.vat}}</span><span class="v">{{buyer.vatNumber}}</span></div>
+    <div class="row"><span class="k">{{l.deliverTo}}</span><span class="v">{{address}}</span></div>
+  </div>
+  <div class="card">
+    <h3>{{l.summary}}</h3>
+    <div class="row"><span class="k">{{l.payment}}</span><span class="v">{{paymentMethod}}</span></div>
+    <div class="row"><span class="k">{{l.suppliers}}</span><span class="v">{{suppliersCount}}</span></div>
+  </div>
+</div>
+{{#each groups}}
+<h3 style="color:#0B2D5B;margin:14px 0 4px">{{this.supplier}} — {{this.number}} · {{this.delivery}}</h3>
+<table>
+  <thead><tr><th>{{../l.item}}</th><th class="num">{{../l.qty}}</th><th class="num">{{../l.unitPrice}}</th><th class="num">{{../l.vatAmount}}</th><th class="num">{{../l.total}}</th></tr></thead>
+  <tbody>{{#each this.items}}<tr><td>{{this.name}}</td><td class="num">{{this.qty}}</td><td class="num">{{this.unitPrice}}</td><td class="num">{{this.vat}}</td><td class="num">{{this.total}}</td></tr>{{/each}}</tbody>
+</table>
+{{/each}}
+<div class="totals">
+  <div class="row"><span class="k">{{l.subtotal}}</span><span class="v">{{totals.subtotal}}</span></div>
+  {{#if totals.hasDiscount}}<div class="row"><span class="k">{{l.discount}}</span><span class="v">- {{totals.discount}}</span></div>{{/if}}
+  <div class="row"><span class="k">{{l.delivery}}</span><span class="v">{{totals.delivery}}</span></div>
+  <div class="row"><span class="k">{{l.vatTotal}}</span><span class="v">{{totals.vat}}</span></div>
+  <div class="row grand"><span>{{l.grandTotal}}</span><span>{{totals.total}}</span></div>
+</div>

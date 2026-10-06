@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo \"cwd=$(pwd)\" && ls -a ../.. | head -40 && pnpm install --frozen-lockfile --filter '@tawreed/api...'",
+  "buildCommand": "pnpm -w exec turbo run build --filter=@tawreed/api && node scripts/copy-chromium.mjs",
+  "outputDirectory": "public",
+  "regions": [
+    "fra1"
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60,
+      "includeFiles": "{dist/**,assets/**,chromium-bin/**}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/index"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/v1/internal/cron",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}

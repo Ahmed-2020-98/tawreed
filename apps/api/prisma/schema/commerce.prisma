@@ -1,0 +1,308 @@
+enum CouponType {
+  PERCENT
+  FIXED
+  FREE_DELIVERY
+}
+
+enum OrderSource {
+  WEB
+  BUYER_APP
+  RFQ
+  REORDER
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PLACED
+  PROCESSING
+  PARTIALLY_DELIVERED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum SupplierOrderStatus {
+  AWAITING_PAYMENT
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  PARTIALLY_DELIVERED
+  COMPLETED
+  REJECTED
+  CANCELLED
+  RETURNED
+}
+
+enum PaymentMethod {
+  CARD
+  BANK_TRANSFER
+  COD
+  CREDIT
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING_VERIFICATION
+  PAID
+  PARTIALLY_PAID
+  DEFERRED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  FAILED
+  CANCELLED
+}
+
+enum DeliveryWindow {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum PriceSource {
+  BASE
+  TIER
+  DEAL
+  QUOTE
+}
+
+enum ActorType {
+  BUYER
+  SUPPLIER
+  DRIVER
+  STAFF
+  SYSTEM
+}
+
+model Cart {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  companyId String   @db.Uuid
+  userId    String   @db.Uuid
+  couponId  String?  @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  company BuyerCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  coupon  Coupon?      @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  items   CartItem[]
+
+  @@unique([companyId, userId])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  cartId    String   @db.Uuid
+  offerId   String   @db.Uuid
+  qty       Decimal  @db.Decimal(14, 3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  cart  Cart  @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, offerId])
+  @@map("cart_items")
+}
+
+model Coupon {
+  id              String     @id @default(uuid(7)) @db.Uuid
+  code            String     @unique
+  descriptionAr   String?
+  descriptionEn   String?
+  type            CouponType
+  value           Decimal    @db.Decimal(14, 2)
+  maxDiscount     Decimal?   @db.Decimal(14, 2)
+  minOrderValue   Decimal    @default(0) @db.Decimal(14, 2)
+  startsAt        DateTime?  @db.Timestamptz(3)
+  endsAt          DateTime?  @db.Timestamptz(3)
+  usageLimit      Int?
+  perCompanyLimit Int?       @default(1)
+  usedCount       Int        @default(0)
+  firstOrderOnly  Boolean    @default(false)
+  categoryId      String?    @db.Uuid
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime   @updatedAt @db.Timestamptz(3)
+
+  category    Category?          @relation(fields: [categoryId], references: [id])
+  carts       Cart[]
+  orders      Order[]
+  redemptions CouponRedemption[]
+
+  @@map("coupons")
+}
+
+model CouponRedemption {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  couponId  String   @db.Uuid
+  orderId   String   @unique @db.Uuid
+  companyId String   @db.Uuid
+  amount    Decimal  @db.Decimal(14, 2)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  coupon  Coupon       @relation(fields: [couponId], references: [id])
+  order   Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  company BuyerCompany @relation(fields: [companyId], references: [id])
+
+  @@index([couponId, companyId])
+  @@map("coupon_redemptions")
+}
+
+model Order {
+  id              String        @id @default(uuid(7)) @db.Uuid
+  number          String        @unique
+  companyId       String        @db.Uuid
+  placedById      String        @db.Uuid
+  source          OrderSource   @default(WEB)
+  rfqId           String?       @db.Uuid
+  quotationId     String?       @unique @db.Uuid
+  status          OrderStatus   @default(PLACED)
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus @default(UNPAID)
+  addressId       String?       @db.Uuid
+  addressSnapshot Json
+  subtotal        Decimal       @db.Decimal(14, 2)
+  discountTotal   Decimal       @default(0) @db.Decimal(14, 2)
+  deliveryTotal   Decimal       @default(0) @db.Decimal(14, 2)
+  vatTotal        Decimal       @default(0) @db.Decimal(14, 2)
+  grandTotal      Decimal       @db.Decimal(14, 2)
+  amountPaid      Decimal       @default(0) @db.Decimal(14, 2)
+  amountRefunded  Decimal       @default(0) @db.Decimal(14, 2)
+  couponId        String?       @db.Uuid
+  couponCode      String?
+  notes           String?
+  placedAt        DateTime?     @db.Timestamptz(3)
+  cancelledAt     DateTime?     @db.Timestamptz(3)
+  cancelReason    String?
+  completedAt     DateTime?     @db.Timestamptz(3)
+  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime      @updatedAt @db.Timestamptz(3)
+
+  company          BuyerCompany      @relation(fields: [companyId], references: [id])
+  coupon           Coupon?           @relation(fields: [couponId], references: [id])
+  rfq              Rfq?              @relation(fields: [rfqId], references: [id])
+  quotation        Quotation?        @relation(fields: [quotationId], references: [id])
+  supplierOrders   SupplierOrder[]
+  events           OrderEvent[]
+  payments         Payment[]
+  invoices         Invoice[]
+  shipments        Shipment[]
+  couponRedemption CouponRedemption?
+  documents        Document[]
+  disputes         Dispute[]
+  refunds          Refund[]
+
+  @@index([companyId, createdAt])
+  @@index([status])
+  @@map("orders")
+}
+
+model SupplierOrder {
+  id               String              @id @default(uuid(7)) @db.Uuid
+  orderId          String              @db.Uuid
+  supplierId       String              @db.Uuid
+  number           String              @unique
+  status           SupplierOrderStatus @default(PENDING)
+  subtotal         Decimal             @db.Decimal(14, 2)
+  discountTotal    Decimal             @default(0) @db.Decimal(14, 2)
+  deliveryFee      Decimal             @default(0) @db.Decimal(14, 2)
+  vatTotal         Decimal             @default(0) @db.Decimal(14, 2)
+  total            Decimal             @db.Decimal(14, 2)
+  commissionRate   Decimal             @db.Decimal(5, 4)
+  commissionAmount Decimal             @default(0) @db.Decimal(14, 2)
+  deliveryDate     DateTime?           @db.Date
+  deliveryWindow   DeliveryWindow?
+  storageType      StorageType         @default(AMBIENT)
+  acceptDeadlineAt DateTime?           @db.Timestamptz(3)
+  acceptedAt       DateTime?           @db.Timestamptz(3)
+  preparingAt      DateTime?           @db.Timestamptz(3)
+  readyAt          DateTime?           @db.Timestamptz(3)
+  dispatchedAt     DateTime?           @db.Timestamptz(3)
+  deliveredAt      DateTime?           @db.Timestamptz(3)
+  completedAt      DateTime?           @db.Timestamptz(3)
+  cancelledAt      DateTime?           @db.Timestamptz(3)
+  rejectedAt       DateTime?           @db.Timestamptz(3)
+  rejectReason     String?
+  cancelReason     String?
+  settlementId     String?             @db.Uuid
+  createdAt        DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime            @updatedAt @db.Timestamptz(3)
+
+  order          Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  supplier       Supplier            @relation(fields: [supplierId], references: [id])
+  settlement     SupplierSettlement? @relation(fields: [settlementId], references: [id])
+  items          OrderItem[]
+  shipments      Shipment[]
+  invoice        Invoice?
+  review         Review?
+  disputes       Dispute[]
+  events         OrderEvent[]
+  documents      Document[]
+  settlementLine SettlementLine?
+  refunds        Refund[]
+
+  @@index([supplierId, status])
+  @@index([orderId])
+  @@map("supplier_orders")
+}
+
+model OrderItem {
+  id              String      @id @default(uuid(7)) @db.Uuid
+  supplierOrderId String      @db.Uuid
+  offerId         String?     @db.Uuid
+  productId       String?     @db.Uuid
+  productUnitId   String?     @db.Uuid
+  productNameAr   String
+  productNameEn   String
+  unitNameAr      String
+  unitNameEn      String
+  imageKey        String?
+  sku             String?
+  qty             Decimal     @db.Decimal(14, 3)
+  unitPrice       Decimal     @db.Decimal(14, 2)
+  listUnitPrice   Decimal     @db.Decimal(14, 2)
+  priceSource     PriceSource @default(BASE)
+  dealId          String?     @db.Uuid
+  discount        Decimal     @default(0) @db.Decimal(14, 2)
+  vatRate         Decimal     @db.Decimal(5, 4)
+  vatAmount       Decimal     @db.Decimal(14, 2)
+  lineSubtotal    Decimal     @db.Decimal(14, 2)
+  lineTotal       Decimal     @db.Decimal(14, 2)
+  deliveredQty    Decimal     @default(0) @db.Decimal(14, 3)
+  returnedQty     Decimal     @default(0) @db.Decimal(14, 3)
+  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
+
+  supplierOrder SupplierOrder  @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  offer         Offer?         @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  shipmentItems ShipmentItem[]
+  disputeItems  DisputeItem[]
+  invoiceLines  InvoiceLine[]
+
+  @@index([supplierOrderId])
+  @@map("order_items")
+}
+
+model OrderEvent {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  orderId         String    @db.Uuid
+  supplierOrderId String?   @db.Uuid
+  shipmentId      String?   @db.Uuid
+  type            String
+  fromStatus      String?
+  toStatus        String?
+  actorType       ActorType
+  actorId         String?   @db.Uuid
+  note            String?
+  meta            Json?
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  supplierOrder SupplierOrder? @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@index([supplierOrderId])
+  @@map("order_events")
+}

@@ -1,0 +1,368 @@
+enum PaymentPurpose {
+  ORDER
+  CREDIT_REPAYMENT
+}
+
+enum PaymentProvider {
+  TAP
+  MANUAL
+  DRIVER_COD
+  CREDIT_LEDGER
+}
+
+enum PaymentRecordStatus {
+  INITIATED
+  PENDING_VERIFICATION
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum InvoiceStatus {
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum CreditStatus {
+  NO_CREDIT
+  ACTIVE
+  FROZEN
+  SUSPENDED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LedgerType {
+  ORDER_CHARGE
+  REPAYMENT
+  REVERSAL
+  ADJUSTMENT
+}
+
+enum CreditApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum CollectionActivityType {
+  CALL
+  SMS
+  EMAIL
+  VISIT
+  PROMISE_TO_PAY
+  NOTE
+}
+
+enum SettlementStatus {
+  DRAFT
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+model Payment {
+  id              String              @id @default(uuid(7)) @db.Uuid
+  number          String              @unique
+  companyId       String              @db.Uuid
+  orderId         String?             @db.Uuid
+  purpose         PaymentPurpose      @default(ORDER)
+  method          PaymentMethod
+  provider        PaymentProvider
+  amount          Decimal             @db.Decimal(14, 2)
+  currency        String              @default("SAR")
+  status          PaymentRecordStatus @default(INITIATED)
+  providerRef     String?             @unique
+  providerStatus  String?
+  providerPayload Json?
+  checkoutUrl     String?
+  bankReference   String?
+  transferDate    DateTime?           @db.Date
+  proofFileId     String?             @db.Uuid
+  verifiedById    String?             @db.Uuid
+  verifiedAt      DateTime?           @db.Timestamptz(3)
+  rejectionReason String?
+  paidAt          DateTime?           @db.Timestamptz(3)
+  failureReason   String?
+  createdById     String?             @db.Uuid
+  createdAt       DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime            @updatedAt @db.Timestamptz(3)
+
+  company     BuyerCompany        @relation(fields: [companyId], references: [id])
+  order       Order?              @relation(fields: [orderId], references: [id])
+  allocations PaymentAllocation[]
+  refunds     Refund[]
+
+  @@index([companyId, createdAt])
+  @@index([status, method])
+  @@map("payments")
+}
+
+model PaymentAllocation {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  paymentId String   @db.Uuid
+  invoiceId String   @db.Uuid
+  amount    Decimal  @db.Decimal(14, 2)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@map("payment_allocations")
+}
+
+model Refund {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  paymentId       String?      @db.Uuid
+  orderId         String       @db.Uuid
+  supplierOrderId String?      @db.Uuid
+  amount          Decimal      @db.Decimal(14, 2)
+  reason          String
+  status          RefundStatus @default(PENDING)
+  providerRef     String?
+  processedAt     DateTime?    @db.Timestamptz(3)
+  createdById     String?      @db.Uuid
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+
+  payment       Payment?       @relation(fields: [paymentId], references: [id])
+  order         Order          @relation(fields: [orderId], references: [id])
+  supplierOrder SupplierOrder? @relation(fields: [supplierOrderId], references: [id])
+
+  @@map("refunds")
+}
+
+model Invoice {
+  id              String        @id @default(uuid(7)) @db.Uuid
+  number          String        @unique
+  supplierOrderId String        @unique @db.Uuid
+  orderId         String        @db.Uuid
+  companyId       String        @db.Uuid
+  supplierId      String        @db.Uuid
+  sellerSnapshot  Json
+  buyerSnapshot   Json
+  issueDate       DateTime      @db.Timestamptz(3)
+  supplyDate      DateTime      @db.Timestamptz(3)
+  dueDate         DateTime?     @db.Date
+  paymentMethod   PaymentMethod
+  subtotal        Decimal       @db.Decimal(14, 2)
+  discountTotal   Decimal       @default(0) @db.Decimal(14, 2)
+  deliveryFee     Decimal       @default(0) @db.Decimal(14, 2)
+  vatTotal        Decimal       @db.Decimal(14, 2)
+  total           Decimal       @db.Decimal(14, 2)
+  amountPaid      Decimal       @default(0) @db.Decimal(14, 2)
+  balanceDue      Decimal       @db.Decimal(14, 2)
+  status          InvoiceStatus @default(ISSUED)
+  zatcaQr         String
+  pdfFileId       String?       @db.Uuid
+  voidReason      String?
+  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime      @updatedAt @db.Timestamptz(3)
+
+  supplierOrder SupplierOrder       @relation(fields: [supplierOrderId], references: [id])
+  order         Order               @relation(fields: [orderId], references: [id])
+  company       BuyerCompany        @relation(fields: [companyId], references: [id])
+  supplier      Supplier            @relation(fields: [supplierId], references: [id])
+  lines         InvoiceLine[]
+  allocations   PaymentAllocation[]
+  creditNotes   CreditNote[]
+  reminders     InvoiceReminder[]
+  collections   CollectionActivity[]
+  documents     Document[]
+
+  @@index([companyId, status])
+  @@index([supplierId])
+  @@index([status, dueDate])
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  invoiceId     String   @db.Uuid
+  orderItemId   String?  @db.Uuid
+  descriptionAr String
+  descriptionEn String
+  qty           Decimal  @db.Decimal(14, 3)
+  unitPrice     Decimal  @db.Decimal(14, 2)
+  vatRate       Decimal  @db.Decimal(5, 4)
+  vatAmount     Decimal  @db.Decimal(14, 2)
+  lineTotal     Decimal  @db.Decimal(14, 2)
+
+  invoice   Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  orderItem OrderItem? @relation(fields: [orderItemId], references: [id])
+
+  @@map("invoice_lines")
+}
+
+model CreditNote {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  number      String   @unique
+  invoiceId   String   @db.Uuid
+  amount      Decimal  @db.Decimal(14, 2)
+  vatAmount   Decimal  @db.Decimal(14, 2)
+  reason      String
+  disputeId   String?  @db.Uuid
+  pdfFileId   String?  @db.Uuid
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@map("credit_notes")
+}
+
+model CreditAccount {
+  id           String       @id @default(uuid(7)) @db.Uuid
+  companyId    String       @unique @db.Uuid
+  status       CreditStatus @default(NO_CREDIT)
+  creditLimit  Decimal      @default(0) @db.Decimal(14, 2)
+  usedAmount   Decimal      @default(0) @db.Decimal(14, 2)
+  termsDays    Int          @default(30)
+  graceDays    Int          @default(5)
+  riskLevel    RiskLevel    @default(MEDIUM)
+  frozenReason String?
+  approvedById String?      @db.Uuid
+  approvedAt   DateTime?    @db.Timestamptz(3)
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime     @updatedAt @db.Timestamptz(3)
+
+  company BuyerCompany        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  ledger  CreditLedgerEntry[]
+
+  @@map("credit_accounts")
+}
+
+model CreditLedgerEntry {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  accountId    String     @db.Uuid
+  type         LedgerType
+  amount       Decimal    @db.Decimal(14, 2)
+  balanceAfter Decimal    @db.Decimal(14, 2)
+  orderId      String?    @db.Uuid
+  invoiceId    String?    @db.Uuid
+  paymentId    String?    @db.Uuid
+  note         String?
+  createdById  String?    @db.Uuid
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+
+  account CreditAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
+  @@map("credit_ledger")
+}
+
+model CreditApplication {
+  id                  String                  @id @default(uuid(7)) @db.Uuid
+  companyId           String                  @db.Uuid
+  requestedLimit      Decimal                 @db.Decimal(14, 2)
+  requestedTermsDays  Int                     @default(30)
+  monthlyPurchases    Decimal?                @db.Decimal(14, 2)
+  yearsInBusiness     Int?
+  documentFileIds     String[]
+  notes               String?
+  status              CreditApplicationStatus @default(SUBMITTED)
+  approvedLimit       Decimal?                @db.Decimal(14, 2)
+  approvedTermsDays   Int?
+  decisionNote        String?
+  decidedById         String?                 @db.Uuid
+  decidedAt           DateTime?               @db.Timestamptz(3)
+  createdById         String                  @db.Uuid
+  createdAt           DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                @updatedAt @db.Timestamptz(3)
+
+  company BuyerCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("credit_applications")
+}
+
+model CollectionActivity {
+  id             String                 @id @default(uuid(7)) @db.Uuid
+  companyId      String                 @db.Uuid
+  invoiceId      String?                @db.Uuid
+  type           CollectionActivityType
+  note           String
+  promisedAmount Decimal?               @db.Decimal(14, 2)
+  promisedDate   DateTime?              @db.Date
+  createdById    String                 @db.Uuid
+  createdAt      DateTime               @default(now()) @db.Timestamptz(3)
+
+  company BuyerCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoice Invoice?     @relation(fields: [invoiceId], references: [id])
+
+  @@index([companyId, createdAt])
+  @@map("collection_activities")
+}
+
+model InvoiceReminder {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  invoiceId  String   @db.Uuid
+  offsetDays Int
+  sentAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@unique([invoiceId, offsetDays])
+  @@map("invoice_reminders")
+}
+
+model SupplierSettlement {
+  id              String           @id @default(uuid(7)) @db.Uuid
+  number          String           @unique
+  supplierId      String           @db.Uuid
+  periodStart     DateTime         @db.Date
+  periodEnd       DateTime         @db.Date
+  grossSales      Decimal          @db.Decimal(14, 2)
+  commissionTotal Decimal          @db.Decimal(14, 2)
+  deliveryFees    Decimal          @default(0) @db.Decimal(14, 2)
+  refunds         Decimal          @default(0) @db.Decimal(14, 2)
+  codCollected    Decimal          @default(0) @db.Decimal(14, 2)
+  netPayable      Decimal          @db.Decimal(14, 2)
+  status          SettlementStatus @default(DRAFT)
+  approvedById    String?          @db.Uuid
+  approvedAt      DateTime?        @db.Timestamptz(3)
+  paidAt          DateTime?        @db.Timestamptz(3)
+  bankReference   String?
+  pdfFileId       String?          @db.Uuid
+  createdAt       DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @db.Timestamptz(3)
+
+  supplier       Supplier         @relation(fields: [supplierId], references: [id])
+  lines          SettlementLine[]
+  supplierOrders SupplierOrder[]
+
+  @@index([supplierId, status])
+  @@map("supplier_settlements")
+}
+
+model SettlementLine {
+  id              String  @id @default(uuid(7)) @db.Uuid
+  settlementId    String  @db.Uuid
+  supplierOrderId String  @unique @db.Uuid
+  gross           Decimal @db.Decimal(14, 2)
+  commission      Decimal @db.Decimal(14, 2)
+  deliveryFee     Decimal @db.Decimal(14, 2)
+  refund          Decimal @default(0) @db.Decimal(14, 2)
+  cod             Decimal @default(0) @db.Decimal(14, 2)
+  net             Decimal @db.Decimal(14, 2)
+
+  settlement    SupplierSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  supplierOrder SupplierOrder      @relation(fields: [supplierOrderId], references: [id])
+
+  @@map("settlement_lines")
+}

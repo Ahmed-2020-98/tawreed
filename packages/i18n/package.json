@@ -1,0 +1,32 @@
+{
+  "name": "@tawreed/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Arabic/English message catalogs and locale formatters",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch --no-clean",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@tawreed/eslint-config": "workspace:*",
+    "@tawreed/tsconfig": "workspace:*",
+    "eslint": "^9.39.1",
+    "tsup": "^8.5.1",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.2"
+  }
+}

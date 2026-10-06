@@ -1,0 +1,10 @@
+{
+  "extends": "@tawreed/tsconfig/nestjs.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "noEmit": true,
+    "types": ["node", "vitest/globals", "multer"]
+  },
+  "include": ["src", "test", "prisma", "vitest.config.ts", "prisma.config.ts"]
+}

@@ -1,0 +1,22 @@
+<div class="grid">
+  <div class="card">
+    <h3>{{l.from}}</h3>
+    <div class="row"><span class="k">{{l.name}}</span><span class="v">{{pickup.name}}</span></div>
+    <div class="row"><span class="k">{{l.address}}</span><span class="v">{{pickup.address}}</span></div>
+  </div>
+  <div class="card">
+    <h3>{{l.to}}</h3>
+    <div class="row"><span class="k">{{l.name}}</span><span class="v">{{buyer}}</span></div>
+    <div class="row"><span class="k">{{l.address}}</span><span class="v">{{dropoff}}</span></div>
+    <div class="row"><span class="k">{{l.receiver}}</span><span class="v">{{receiver}}</span></div>
+  </div>
+</div>
+<div class="grid">
+  <div class="card"><div class="row"><span class="k">{{l.driver}}</span><span class="v">{{driver}}</span></div><div class="row"><span class="k">{{l.vehicle}}</span><span class="v">{{vehicle}}</span></div></div>
+  <div class="card"><div class="row"><span class="k">{{l.deliveredAt}}</span><span class="v">{{deliveredAt}}</span></div><div class="row"><span class="k">{{l.otp}}</span><span class="v">{{otp}}</span></div></div>
+</div>
+<table>
+  <thead><tr><th>{{l.item}}</th><th class="num">{{l.shipped}}</th><th class="num">{{l.delivered}}</th></tr></thead>
+  <tbody>{{#each items}}<tr><td>{{this.name}}</td><td class="num">{{this.qty}}</td><td class="num">{{this.delivered}}</td></tr>{{/each}}</tbody>
+</table>
+<div class="sign"><div>{{l.driverSign}}</div><div>{{l.receiverSign}}</div></div>
