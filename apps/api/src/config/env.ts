@@ -58,7 +58,7 @@ const envSchema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().optional(),
   S3_PUBLIC_BASE_URL: z.string().optional(),
 
-  TAP_SECRET_KEY: z.string().default('sk_test_XKokBfNWv6FIYuTMg5sLPjhJ'),
+  TAP_SECRET_KEY: z.string().default(''),
   TAP_API_BASE: z.url().default('https://api.tap.company/v2'),
   EXPO_ACCESS_TOKEN: z.string().optional(),
   /** `sparticuz` = the serverless Chromium build (@sparticuz/chromium) used on Vercel. */
