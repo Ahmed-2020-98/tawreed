@@ -3,6 +3,7 @@ import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Logo } from '@/components/brand/logo';
 import { Link } from '@/i18n/navigation';
+import { SUPPLIER_URL } from '@/lib/config';
 import { AppBadges } from './app-badges';
 
 const SOCIAL_LABEL: Record<string, string> = { x: 'X', instagram: 'Instagram', linkedin: 'LinkedIn', snapchat: 'Snapchat', tiktok: 'TikTok', youtube: 'YouTube' };
@@ -14,7 +15,7 @@ export async function SiteFooter({ settings }: { settings: PublicSettingsDto }) 
   const cols: { title: string; links: [string, string][] }[] = [
     { title: t('company'), links: [['/about', tn('about')], ['/blog', tn('blog')], ['/contact', tn('contact')], ['/pages/careers', t('careers')]] },
     { title: t('buyers'), links: [['/store', tn('store')], ['/rfq/new', tn('rfq')], ['/pay-later', tn('payLater')], ['/deals', tn('deals')], ['/suppliers', tn('suppliers')]] },
-    { title: t('suppliers'), links: [['/sell', t('joinSupplier')], ['http://localhost:3032', t('supplierLogin')], ['/pages/driver-app', t('driverApp')]] },
+    { title: t('suppliers'), links: [['/sell', t('joinSupplier')], SUPPLIER_URL ? [`${SUPPLIER_URL}/login`, t('supplierLogin')] : ['/#apps', t('supplierApp')], ['/#apps', t('driverApp')]] },
     { title: t('help'), links: [['/faq', tn('faq')], ['/pages/terms', t('terms')], ['/pages/privacy', t('privacy')], ['/pages/returns', t('returns')]] },
   ];
   return (
@@ -51,7 +52,7 @@ export async function SiteFooter({ settings }: { settings: PublicSettingsDto }) 
                 <p className="mb-4 text-sm font-extrabold text-white">{c.title}</p>
                 <ul className="space-y-2.5 text-sm">
                   {c.links.map(([href, label]) => (
-                    <li key={href}>
+                    <li key={label}>
                       {href.startsWith('http') ? (
                         <a href={href} className="transition hover:text-mint">
                           {label}
@@ -82,7 +83,7 @@ export async function SiteFooter({ settings }: { settings: PublicSettingsDto }) 
             ))}
           </div>
           <div className="flex items-center gap-2" dir="ltr">
-            {['mada', 'VISA', 'Mastercard', ' Pay', 'SADAD'].map((m) => (
+            {['mada', 'VISA', 'Mastercard', 'Apple Pay', 'SADAD'].map((m) => (
               <span key={m} className="grid h-8 min-w-12 place-items-center rounded-md bg-white px-2 font-display text-[0.6875rem] font-extrabold text-navy-900">
                 {m}
               </span>

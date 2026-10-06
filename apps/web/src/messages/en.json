@@ -128,7 +128,8 @@
     "newsletter": "Tawreed newsletter",
     "newsletterHint": "Weekly deals and market prices",
     "subscribe": "Subscribe",
-    "emailPlaceholder": "Your email"
+    "emailPlaceholder": "Your email",
+    "supplierApp": "Supplier app"
   },
   "landing": {
     "hero": {
@@ -396,7 +397,8 @@
     "side3": "Scheduled delivery with live tracking",
     "side4": "Electronic VAT invoices",
     "supplierHint": "Supplier?",
-    "supplierLink": "Go to the supplier portal"
+    "supplierLink": "Go to the supplier portal",
+    "supplierAppLink": "Get the supplier app"
   },
   "cart": {
     "title": "Shopping cart",

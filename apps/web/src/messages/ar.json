@@ -128,7 +128,8 @@
     "newsletter": "نشرة توريد",
     "newsletterHint": "أحدث العروض وأسعار السوق أسبوعيًا",
     "subscribe": "اشترك",
-    "emailPlaceholder": "بريدك الإلكتروني"
+    "emailPlaceholder": "بريدك الإلكتروني",
+    "supplierApp": "تطبيق الموردين"
   },
   "landing": {
     "hero": {
@@ -396,7 +397,8 @@
     "side3": "توصيل مجدول وتتبع مباشر",
     "side4": "فواتير ضريبية إلكترونية",
     "supplierHint": "مورد؟",
-    "supplierLink": "ادخل إلى بوابة الموردين"
+    "supplierLink": "ادخل إلى بوابة الموردين",
+    "supplierAppLink": "حمّل تطبيق الموردين"
   },
   "cart": {
     "title": "سلة المشتريات",

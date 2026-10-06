@@ -49,9 +49,9 @@ export async function ProductCard({ product: p, className, priority }: { product
 
         {o ? (
           <div className="mt-2.5">
-            <div className="flex items-baseline gap-2">
-              <span className="num text-lg font-extrabold text-navy-900">{f.money(o.effectivePrice)}</span>
-              {discount > 0 && <span className="num text-xs text-gray-400 line-through">{f.money(o.deal ? o.price : o.compareAtPrice)}</span>}
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="num whitespace-nowrap text-lg font-extrabold text-navy-900">{f.money(o.effectivePrice)}</span>
+              {discount > 0 && <span className="num whitespace-nowrap text-xs text-gray-400 line-through">{f.money(o.deal ? o.price : o.compareAtPrice)}</span>}
             </div>
             <p className="mt-0.5 truncate text-xs text-gray-500">
               {o.unit.name}

@@ -17,6 +17,7 @@ import { buildSearchText } from '../../src/common/text/arabic.js';
 import { BANNERS, BLOG_POSTS, blogBody, COUPONS, FAQS, HOME_SECTIONS, LANDING_STATS, PAGES, TESTIMONIALS } from './data/content.js';
 import { BRANDS, CATEGORIES, MEDIA_EXTRA, PRODUCTS, type SeedProduct } from './data/catalog.js';
 import { BUYERS, CITIES, DRIVERS, REGIONS, STAFF, SUPPLIERS } from './data/people.js';
+import { logo } from './logo.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const storageRoot = path.resolve(process.cwd(), process.env.STORAGE_LOCAL_DIR ?? './storage');
@@ -76,19 +77,6 @@ async function placeholder(label: string, color: string): Promise<Buffer> {
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
-/** Logo: rounded square with Latin initials in the organisation colour. */
-async function logo(nameEn: string, color: string): Promise<Buffer> {
-  const initials = nameEn
-    .replace(/[^A-Za-z ]/g, '')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase())
-    .join('');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" rx="88" fill="${color}"/><circle cx="330" cy="70" r="120" fill="#ffffff" opacity="0.08"/><text x="200" y="245" font-family="Helvetica, Arial" font-size="150" font-weight="800" fill="#fff" text-anchor="middle">${initials}</text></svg>`;
-  return sharp(Buffer.from(svg)).png().toBuffer();
-}
-
 /* ---------------------------------------------------------------- steps */
 
 async function reset() {
@@ -126,7 +114,7 @@ async function seedCatalog() {
   }
   const brands = new Map<string, string>();
   for (const b of BRANDS) {
-    const logoFileId = await storeImage(`brand-${b.slug}`, await logo(b.en, b.color), 'BRAND_LOGO');
+    const logoFileId = await storeImage(`brand-${b.slug}`, await logo(b.ar, b.color), 'BRAND_LOGO');
     brands.set(b.slug, (await prisma.brand.create({ data: { slug: b.slug, nameAr: b.ar, nameEn: b.en, originCountry: b.origin ?? null, isFeatured: !!b.featured, logoFileId } })).id);
   }
   const products = new Map<string, { id: string; units: { id: string; qty: number; code: string }[]; seed: SeedProduct; parentCat: string }>();
@@ -173,7 +161,7 @@ async function seedSuppliers(cities: Map<string, string>, products: Awaited<Retu
   const now = Date.now();
   for (const s of SUPPLIERS) {
     const r = rng(s.slug);
-    const logoFileId = await storeImage(`supplier-${s.slug}`, await logo(s.en, s.color), 'SUPPLIER_LOGO');
+    const logoFileId = await storeImage(`supplier-${s.slug}`, await logo(s.ar, s.color), 'SUPPLIER_LOGO');
     const owner = await prisma.user.create({ data: { type: 'SUPPLIER', name: s.owner.name, phone: s.owner.phone, phoneVerifiedAt: new Date() } });
     const supplier = await prisma.supplier.create({
       data: {

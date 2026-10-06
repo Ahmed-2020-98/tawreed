@@ -104,7 +104,7 @@ export async function AppsSection({ settings }: { settings: PublicSettingsDto })
     { img: '/brand/apps/driver-icon.png', label: t('driver') },
   ];
   return (
-    <section className="container-page py-20">
+    <section id="apps" className="container-page scroll-mt-28 py-20">
       <div className="grid items-center gap-12 rounded-[2rem] bg-sand-100 px-6 py-12 sm:px-12 lg:grid-cols-[1.2fr_1fr]">
         <div>
           <SectionHeading eyebrow={t('eyebrow')} title={t('title')} className="mb-5" />

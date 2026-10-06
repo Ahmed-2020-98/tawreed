@@ -10,6 +10,7 @@ import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
+import { SUPPLIER_URL } from '@/lib/config';
 import { useApi, useAuthApi } from '@/lib/hooks/use-api';
 
 type Step = 'phone' | 'otp' | 'details';
@@ -149,9 +150,15 @@ export function AuthFlow({ mode }: { mode: 'login' | 'register' }) {
           </p>
           <p className="mt-8 border-t border-gray-100 pt-6 text-center text-sm text-gray-600">
             {t('supplierHint')}{' '}
-            <a href="http://localhost:3032/login" className="font-bold text-navy-900 hover:underline">
-              {t('supplierLink')}
-            </a>
+            {SUPPLIER_URL ? (
+              <a href={`${SUPPLIER_URL}/login`} className="font-bold text-navy-900 hover:underline">
+                {t('supplierLink')}
+              </a>
+            ) : (
+              <Link href="/#apps" className="font-bold text-navy-900 hover:underline">
+                {t('supplierAppLink')}
+              </Link>
+            )}
           </p>
         </form>
       )}

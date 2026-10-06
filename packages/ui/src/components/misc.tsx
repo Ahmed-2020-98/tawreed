@@ -30,13 +30,21 @@ export function Steps({ steps, current, className }: { steps: React.ReactNode[];
   );
 }
 
-export function Avatar({ name, src, size = 40, className }: { name: string; src?: string | null; size?: number; className?: string }) {
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
+/** Arabic names get one letter (two read as a word, e.g. «يا»), skipping the article «ال». */
+function initialsOf(name: string) {
+  const words = name.split(/\s+/).filter(Boolean);
+  if (/[\u0600-\u06FF]/.test(name)) {
+    const w = words[0] ?? '';
+    return (w.startsWith('ال') && w.length > 3 ? w[2] : w[0]) ?? '';
+  }
+  return words
     .slice(0, 2)
-    .map((p) => p[0])
+    .map((p) => p[0]?.toUpperCase())
     .join('');
+}
+
+export function Avatar({ name, src, size = 40, className }: { name: string; src?: string | null; size?: number; className?: string }) {
+  const initials = initialsOf(name);
   return (
     <span className={cn('inline-grid shrink-0 place-items-center overflow-hidden rounded-full bg-navy-100 font-bold text-navy-800', className)} style={{ width: size, height: size, fontSize: size * 0.38 }}>
       {src ? <img src={src} alt={name} className="size-full object-cover" /> : initials}
